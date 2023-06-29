@@ -14,6 +14,7 @@ BASE_DIR = pathlib.Path(__file__).parent.parent
 async def init_app():
     app = web.Application()
     app['websockets'] = {}
+    app['redis'] = await redis.from_url("redis://localhost:6379")
     app.on_shutdown.append(shutdown)
     aiohttp_jinja2.setup(
         app, loader=jinja2.FileSystemLoader(
@@ -26,6 +27,7 @@ async def init_app():
 
 
 async def shutdown(app):
+    # TODO
     for ws in app['websockets'].values():
         await ws.close()
     app['websockets'].clear()
@@ -39,9 +41,7 @@ async def get_app():
 
 
 def main():
-    logging.basicConfig(level=logging.DEBUG)
-
-    connection = redis.from_url('redis://localhost:6379')
+    # logging.basicConfig(level=logging.DEBUG)
     app = init_app()
     web.run_app(app)
 
