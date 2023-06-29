@@ -18,11 +18,23 @@ def get_random_name():
 async def reader(channel, ws, name):
     while True:
         # print("wow")
-        message = await channel.get_message(ignore_subscribe_messages=True)
-        if message is not None:
-            print("from reader:", message["data"].decode())
-            print("ready to send")
-            await ws.send_json({'action': 'sent', 'name': name, 'text': message["data"].decode()})
+        try:
+            message = await channel.get_message(ignore_subscribe_messages=True)
+            if message is not None:
+                # TODO : need to refactor
+                # print(json.loads(message["data"].decode()))
+                # print("from reader:", message["data"].decode())
+                # print("action:", json.loads(
+                #     message["data"].decode())["action"])
+                if json.loads(message["data"].decode())["action"] == "join":
+                    await ws.send_json({'action': 'join', 'name': json.loads(message["data"].decode())["name"]})
+                elif json.loads(message["data"].decode())["action"] == "sent":
+                    if json.loads(message["data"].decode())["name"] != name:
+                        await ws.send_json({'action': 'sent', 'name': json.loads(message["data"].decode())["name"], 'text': json.loads(message["data"].decode())["text"]})
+                else:
+                    await ws.send_json({'action': 'disconnect', 'name': json.loads(message["data"].decode())["name"]})
+        except:
+            break
 
 
 async def index(request):
@@ -39,56 +51,40 @@ async def index(request):
 
     await ws_current.send_json({'action': 'connect', 'name': name})
 
-    # TODO : 현재 ws가 connect 되었다는 메세지를 연결된 웹소켓에 뿌려줘야 함,
-    # join_json = {
-    #     "action": "join",
-    #     "name": name
-    # }
-    # async with r.pubsub() as pubsub:
-    #     await r.publish("channel:1", json.dumps(join_json))
-    #     await pubsub.subscribe("channel:1")
-
-    # example
-    # sub = await r.create_redis_pool("redis://localhost")
-    # pub = await r.create_redis_pool("redis://localhost")
-
-    # ch, *_ = await sub.subscribe("channel:1")
+    # TODO : 현재 ws가 connect 되었다는 메세지를 연결된 웹소켓에 뿌려줘야 함
+    join_json = {
+        "action": "join",
+        "name": name
+    }
+    await r.publish("channel:1", json.dumps(join_json))
 
     # TODO : 현재 웹소켓이 채널에 subscribe하고 채널에 메세지를 publish해야 함
     async with r.pubsub() as pubsub:
         await pubsub.subscribe("channel:1")
-        future = asyncio.create_task(reader(pubsub, ws_current, name))
+        asyncio.create_task(reader(pubsub, ws_current, name))
 
-        # await r.publish("channel:1", "hello")
         while True:
             msg = await ws_current.receive()
-            print(msg)
-            await r.publish("channel:1", msg.data)
-            # await future
-        # async for msg in ws_current:
-        #     print(msg.data)
-        #     await r.publish("channel:1", msg.data)
-        # await future
+            # print(msg)
+            if msg.type == aiohttp.WSMsgType.text:
+                sent_json = {
+                    "action": "sent",
+                    "name": name,
+                    "text": msg.data
+                }
+                await r.publish("channel:1", json.dumps(sent_json))
+                # TODO : need to know how to work
+                # await future
+            else:
+                break
 
-    # for ws in request.app['websockets'].values():
-    #     await ws.send_json({'action': 'join', 'name': name})
-    # request.app['websockets'][name] = ws_current
-
-    # while True:
-    #     msg = await ws_current.receive()
-
-    #     if msg.type == aiohttp.WSMsgType.text:
-    #         for ws in request.app['websockets'].values():
-    #             if ws is not ws_current:
-    #                 await ws.send_json(
-    #                     {'action': 'sent', 'name': name, 'text': msg.data}
-    #                 )
-    #     else:
-    #         break
-
-    # del request.app['websockets'][name]
-    # log.info('%s disconnected.', name)
-    # for ws in request.app['websockets'].values():
-    #     await ws.send_json({'action': 'disconnect', 'name': name})
+    # TODO : web socket diconnect할 때, 다른 연결된 웹소켓에 메세지 전달
+    disconnect_json = {
+        "action": "disconnect",
+        "name": name
+    }
+    await r.pubsub().unsubscribe("channel:1")
+    await r.publish("channel:1", json.dumps(disconnect_json))
+    log.info('%s disconnected.', name)
 
     return ws_current
