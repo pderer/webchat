@@ -11,7 +11,7 @@
             var name = "UNKNOWN";
             function log(msg) {
                 var control = $('#log');
-                var date = new Date();
+                var date = new Date((new Date()).getTime() + 1000 * 60 * 60 * 9);
                 var date_prompt = '(' + date.toISOString().split('T')[1].slice(0, 8) + ') ';
                 control.html(control.html() + date_prompt + msg + '<br/>');
                 control.scrollTop(control.scrollTop() + 1000);
@@ -36,7 +36,6 @@
                         case 'disconnect':
                             name = data.name;
                             log('Disconnected ' + name);
-                            update_ui();
                             break;
                         case 'join':
                             log('Joined ' + data.name);
@@ -67,7 +66,7 @@
                     $('#connect').html('Connect');
                     $('#send').prop("disabled", true);
                 } else {
-                    $('#status').text('connected (' + conn.protocol + ')');
+                    $('#status').text('connected');
                     $('#connect').html('Disconnect');
                     $('#send').prop("disabled", false);
                 }
@@ -101,7 +100,7 @@
 </head>
 
 <body>
-    <h3>Chat!</h3>
+    <h3>Realtime webchat!</h3>
     <div>
         <button id="connect">Connect</button>&nbsp;|&nbsp;Status:
         <span id="name">UNKNOWN</span>

@@ -10,7 +10,11 @@ services:
       - 8080:8080
     depends_on:
       - redis
+    environment:
+      - TZ=Asia/Seoul
   redis:
     image: redis:7.0.11
     ports:
       - 6379:6379
+    environment:
+      - TZ=Asia/Seoul

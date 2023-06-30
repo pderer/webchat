@@ -39,7 +39,7 @@ async def get_app():
 
 
 def main():
-    logging.basicConfig(level=logging.DEBUG)
+    # logging.basicConfig(level=logging.DEBUG)
     app = init_app()
     web.run_app(app)
 
