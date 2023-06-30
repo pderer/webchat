@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  web:
+    build: ./webchats
+    command: python main.py
+    volumes:
+      - ./webchats/:/usr/src/
+    ports:
+      - 8080:8080
+    depends_on:
+      - redis
+  redis:
+    image: redis:7.0.11
+    ports:
+      - 6379:6379

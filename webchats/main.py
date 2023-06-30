@@ -8,16 +8,17 @@ import aiohttp_jinja2
 from aiohttp import web
 from views import index
 
-BASE_DIR = pathlib.Path(__file__).parent.parent
+BASE_DIR = pathlib.Path(__file__).parent
 
 
 async def init_app():
     app = web.Application()
-    app['redis'] = await redis.from_url("redis://localhost:6379")
+    # local url : "redis://localhost:6379", docker url : "redis://redis:6379"
+    app['redis'] = await redis.from_url("redis://redis:6379")
     app.on_shutdown.append(shutdown)
     aiohttp_jinja2.setup(
         app, loader=jinja2.FileSystemLoader(
-            str(BASE_DIR / 'webchats' / 'templates'))
+            str(BASE_DIR / 'templates'))
     )
 
     app.router.add_get('/', index)
@@ -38,7 +39,7 @@ async def get_app():
 
 
 def main():
-    # logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG)
     app = init_app()
     web.run_app(app)
 
