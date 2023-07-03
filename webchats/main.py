@@ -14,6 +14,7 @@ BASE_DIR = pathlib.Path(__file__).parent
 async def init_app():
     app = web.Application()
     # local url : "redis://localhost:6379", docker url : "redis://redis:6379"
+    # click : 환경변수 라이브러리, hard coding 금지.
     app['redis'] = await redis.from_url("redis://redis:6379")
     app.on_shutdown.append(shutdown)
     aiohttp_jinja2.setup(
